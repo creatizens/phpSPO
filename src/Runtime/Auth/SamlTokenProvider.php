@@ -118,17 +118,19 @@ class SamlTokenProvider extends BaseTokenProvider
      */
     protected function acquireSecurityToken($username, $password)
     {
-        $data = $this->prepareSecurityTokenRequest($username, $password, $this->authorityUrl);
-        $response = Requests::post(self::$StsUrl, null, $data);
+      $data     = $this->prepareSecurityTokenRequest($username, $password, $this->authorityUrl);
+      $response = Requests::post(self::$StsUrl, null, $data);
 
-        try {
-            return $this->processSecurityTokenResponse($response->getContent());
-        } catch (Exception $e) {
-            // Try to get the token with a federated authentication.
-            $response = $this->acquireSecurityTokenFromFederatedSTS($username, $password);
-            return $this->processSecurityTokenResponse($response->getContent());
-        }
-    }
+      if (!$response) {
+        $response = $this->acquireSecurityTokenFromFederatedSTS($username, $password);
+      }
+
+      try {
+          return $this->processSecurityTokenResponse($response->getContent());
+      } catch (Exception $e) {
+          throw new Exception($e->getMessage());
+      }
+  }
 
     /**
      * Acquire the service token from Federated STS
